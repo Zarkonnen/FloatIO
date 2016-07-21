@@ -40,9 +40,9 @@ public strictfp class FloatingDecimal2{
     // most are IEEE-754 related.
     // (There are more really boring constants at the end.)
     //
-    static final int    EXP_SHIFT = DoubleConsts.SIGNIFICAND_WIDTH - 1;
+    static final int    EXP_SHIFT = DoubleConsts2.SIGNIFICAND_WIDTH - 1;
     static final long   FRACT_HOB = ( 1L<<EXP_SHIFT ); // assumed High-Order bit
-    static final long   EXP_ONE   = ((long)DoubleConsts.EXP_BIAS)<<EXP_SHIFT; // exponent of 1.0
+    static final long   EXP_ONE   = ((long)DoubleConsts2.EXP_BIAS)<<EXP_SHIFT; // exponent of 1.0
     static final int    MAX_SMALL_BIN_EXP = 62;
     static final int    MIN_SMALL_BIN_EXP = -( 63 / 3 );
     static final int    MAX_DECIMAL_DIGITS = 15;
@@ -51,7 +51,7 @@ public strictfp class FloatingDecimal2{
     static final int    BIG_DECIMAL_EXPONENT = 324; // i.e. abs(MIN_DECIMAL_EXPONENT)
     static final int    MAX_NDIGITS = 1100;
 
-    static final int    SINGLE_EXP_SHIFT  =   FloatConsts.SIGNIFICAND_WIDTH - 1;
+    static final int    SINGLE_EXP_SHIFT  =   FloatConsts2.SIGNIFICAND_WIDTH - 1;
     static final int    SINGLE_FRACT_HOB  =   1<<SINGLE_EXP_SHIFT;
     static final int    SINGLE_MAX_DECIMAL_DIGITS = 7;
     static final int    SINGLE_MAX_DECIMAL_EXPONENT = 38;
@@ -816,17 +816,17 @@ public strictfp class FloatingDecimal2{
          * take the floor and call it decExp.
          */
         static int estimateDecExp(long fractBits, int binExp) {
-            double d2 = Double.longBitsToDouble( EXP_ONE | ( fractBits & DoubleConsts.SIGNIF_BIT_MASK ) );
+            double d2 = Double.longBitsToDouble( EXP_ONE | ( fractBits & DoubleConsts2.SIGNIF_BIT_MASK ) );
             double d = (d2-1.5D)*0.289529654D + 0.176091259 + (double)binExp * 0.301029995663981;
             long dBits = Double.doubleToRawLongBits(d);  //can't be NaN here so use raw
-            int exponent = (int)((dBits & DoubleConsts.EXP_BIT_MASK) >> EXP_SHIFT) - DoubleConsts.EXP_BIAS;
-            boolean isNegative = (dBits & DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
+            int exponent = (int)((dBits & DoubleConsts2.EXP_BIT_MASK) >> EXP_SHIFT) - DoubleConsts2.EXP_BIAS;
+            boolean isNegative = (dBits & DoubleConsts2.SIGN_BIT_MASK) != 0; // discover sign
             if(exponent>=0 && exponent<52) { // hot path
-                long mask   = DoubleConsts.SIGNIF_BIT_MASK >> exponent;
-                int r = (int)(( (dBits&DoubleConsts.SIGNIF_BIT_MASK) | FRACT_HOB )>>(EXP_SHIFT-exponent));
+                long mask   = DoubleConsts2.SIGNIF_BIT_MASK >> exponent;
+                int r = (int)(( (dBits&DoubleConsts2.SIGNIF_BIT_MASK) | FRACT_HOB )>>(EXP_SHIFT-exponent));
                 return isNegative ? (((mask & dBits) == 0L ) ? -r : -r-1 ) : r;
             } else if (exponent < 0) {
-                return (((dBits&~DoubleConsts.SIGN_BIT_MASK) == 0) ? 0 :
+                return (((dBits&~DoubleConsts2.SIGN_BIT_MASK) == 0) ? 0 :
                         ( (isNegative) ? -1 : 0) );
             } else { //if (exponent >= 52)
                 return (int)d;
@@ -1259,7 +1259,7 @@ public strictfp class FloatingDecimal2{
             while (true) {
                 // here ieeeBits can't be NaN, Infinity or zero
                 int binexp = (int) (ieeeBits >>> EXP_SHIFT);
-                long bigBbits = ieeeBits & DoubleConsts.SIGNIF_BIT_MASK;
+                long bigBbits = ieeeBits & DoubleConsts2.SIGNIF_BIT_MASK;
                 if (binexp > 0) {
                     bigBbits |= FRACT_HOB;
                 } else { // Normalize denormalized numbers.
@@ -1269,7 +1269,7 @@ public strictfp class FloatingDecimal2{
                     bigBbits <<= shift;
                     binexp = 1 - shift;
                 }
-                binexp -= DoubleConsts.EXP_BIAS;
+                binexp -= DoubleConsts2.EXP_BIAS;
                 int lowOrderZeros = Long.numberOfTrailingZeros(bigBbits);
                 bigBbits >>>= lowOrderZeros;
                 final int bigIntExp = binexp - EXP_SHIFT + lowOrderZeros;
@@ -1296,11 +1296,11 @@ public strictfp class FloatingDecimal2{
                 // shift bigB and bigD left by a number s. t.
                 // halfUlp is still an integer.
                 int hulpbias;
-                if (binexp <= -DoubleConsts.EXP_BIAS) {
+                if (binexp <= -DoubleConsts2.EXP_BIAS) {
                     // This is going to be a denormalized number
                     // (if not actually zero).
                     // half an ULP is at 2^-(DoubleConsts.EXP_BIAS+EXP_SHIFT+1)
-                    hulpbias = binexp + lowOrderZeros + DoubleConsts.EXP_BIAS;
+                    hulpbias = binexp + lowOrderZeros + DoubleConsts2.EXP_BIAS;
                 } else {
                     hulpbias = 1 + lowOrderZeros;
                 }
@@ -1338,7 +1338,7 @@ public strictfp class FloatingDecimal2{
                 if ((cmpResult = bigB.cmp(bigD)) > 0) {
                     overvalue = true; // our candidate is too big.
                     diff = bigB.leftInplaceSub(bigD); // bigB is not user further - reuse
-                    if ((bigIntNBits == 1) && (bigIntExp > -DoubleConsts.EXP_BIAS + 1)) {
+                    if ((bigIntNBits == 1) && (bigIntExp > -DoubleConsts2.EXP_BIAS + 1)) {
                         // candidate is a normalized exact power of 2 and
                         // is too big (larger than Double.MIN_NORMAL). We will be subtracting.
                         // For our purposes, ulp is the ulp of the
@@ -1377,7 +1377,7 @@ public strictfp class FloatingDecimal2{
                     // halfUlp here, if we bothered to compute that difference.
                     // Most of the time ( I hope ) it is about 1 anyway.
                     ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
-                    if (ieeeBits == 0 || ieeeBits == DoubleConsts.EXP_BIT_MASK) { // 0.0 or Double.POSITIVE_INFINITY
+                    if (ieeeBits == 0 || ieeeBits == DoubleConsts2.EXP_BIT_MASK) { // 0.0 or Double.POSITIVE_INFINITY
                         break correctionLoop; // oops. Fell off end of range.
                     }
                     continue; // try again.
@@ -1385,7 +1385,7 @@ public strictfp class FloatingDecimal2{
 
             }
             if (isNegative) {
-                ieeeBits |= DoubleConsts.SIGN_BIT_MASK;
+                ieeeBits |= DoubleConsts2.SIGN_BIT_MASK;
             }
             return Double.longBitsToDouble(ieeeBits);
         }
@@ -1565,7 +1565,7 @@ public strictfp class FloatingDecimal2{
             while (true) {
                 // here ieeeBits can't be NaN, Infinity or zero
                 int binexp = ieeeBits >>> SINGLE_EXP_SHIFT;
-                int bigBbits = ieeeBits & FloatConsts.SIGNIF_BIT_MASK;
+                int bigBbits = ieeeBits & FloatConsts2.SIGNIF_BIT_MASK;
                 if (binexp > 0) {
                     bigBbits |= SINGLE_FRACT_HOB;
                 } else { // Normalize denormalized numbers.
@@ -1575,7 +1575,7 @@ public strictfp class FloatingDecimal2{
                     bigBbits <<= shift;
                     binexp = 1 - shift;
                 }
-                binexp -= FloatConsts.EXP_BIAS;
+                binexp -= FloatConsts2.EXP_BIAS;
                 int lowOrderZeros = Integer.numberOfTrailingZeros(bigBbits);
                 bigBbits >>>= lowOrderZeros;
                 final int bigIntExp = binexp - SINGLE_EXP_SHIFT + lowOrderZeros;
@@ -1602,11 +1602,11 @@ public strictfp class FloatingDecimal2{
                 // shift bigB and bigD left by a number s. t.
                 // halfUlp is still an integer.
                 int hulpbias;
-                if (binexp <= -FloatConsts.EXP_BIAS) {
+                if (binexp <= -FloatConsts2.EXP_BIAS) {
                     // This is going to be a denormalized number
                     // (if not actually zero).
                     // half an ULP is at 2^-(FloatConsts.EXP_BIAS+SINGLE_EXP_SHIFT+1)
-                    hulpbias = binexp + lowOrderZeros + FloatConsts.EXP_BIAS;
+                    hulpbias = binexp + lowOrderZeros + FloatConsts2.EXP_BIAS;
                 } else {
                     hulpbias = 1 + lowOrderZeros;
                 }
@@ -1644,7 +1644,7 @@ public strictfp class FloatingDecimal2{
                 if ((cmpResult = bigB.cmp(bigD)) > 0) {
                     overvalue = true; // our candidate is too big.
                     diff = bigB.leftInplaceSub(bigD); // bigB is not user further - reuse
-                    if ((bigIntNBits == 1) && (bigIntExp > -FloatConsts.EXP_BIAS + 1)) {
+                    if ((bigIntNBits == 1) && (bigIntExp > -FloatConsts2.EXP_BIAS + 1)) {
                         // candidate is a normalized exact power of 2 and
                         // is too big (larger than Float.MIN_NORMAL). We will be subtracting.
                         // For our purposes, ulp is the ulp of the
@@ -1683,7 +1683,7 @@ public strictfp class FloatingDecimal2{
                     // halfUlp here, if we bothered to compute that difference.
                     // Most of the time ( I hope ) it is about 1 anyway.
                     ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
-                    if (ieeeBits == 0 || ieeeBits == FloatConsts.EXP_BIT_MASK) { // 0.0 or Float.POSITIVE_INFINITY
+                    if (ieeeBits == 0 || ieeeBits == FloatConsts2.EXP_BIT_MASK) { // 0.0 or Float.POSITIVE_INFINITY
                         break correctionLoop; // oops. Fell off end of range.
                     }
                     continue; // try again.
@@ -1691,7 +1691,7 @@ public strictfp class FloatingDecimal2{
 
             }
             if (isNegative) {
-                ieeeBits |= FloatConsts.SIGN_BIT_MASK;
+                ieeeBits |= FloatConsts2.SIGN_BIT_MASK;
             }
             return Float.intBitsToFloat(ieeeBits);
         }
@@ -1747,11 +1747,11 @@ public strictfp class FloatingDecimal2{
      */
     static BinaryToASCIIConverter getBinaryToASCIIConverter(double d, boolean isCompatibleFormat) {
         long dBits = Double.doubleToRawLongBits(d);
-        boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
-        long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
-        int  binExp = (int)( (dBits&DoubleConsts.EXP_BIT_MASK) >> EXP_SHIFT );
+        boolean isNegative = (dBits&DoubleConsts2.SIGN_BIT_MASK) != 0; // discover sign
+        long fractBits = dBits & DoubleConsts2.SIGNIF_BIT_MASK;
+        int  binExp = (int)( (dBits&DoubleConsts2.EXP_BIT_MASK) >> EXP_SHIFT );
         // Discover obvious special cases of NaN and Infinity.
-        if ( binExp == (int)(DoubleConsts.EXP_BIT_MASK>>EXP_SHIFT) ) {
+        if ( binExp == (int)(DoubleConsts2.EXP_BIT_MASK>>EXP_SHIFT) ) {
             if ( fractBits == 0L ){
                 return isNegative ? B2AC_NEGATIVE_INFINITY : B2AC_POSITIVE_INFINITY;
             } else {
@@ -1777,7 +1777,7 @@ public strictfp class FloatingDecimal2{
             fractBits |= FRACT_HOB;
             nSignificantBits = EXP_SHIFT+1;
         }
-        binExp -= DoubleConsts.EXP_BIAS;
+        binExp -= DoubleConsts2.EXP_BIAS;
         BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
         buf.setSign(isNegative);
         // call the routine that actually does all the hard work.
@@ -1787,11 +1787,11 @@ public strictfp class FloatingDecimal2{
 
     private static BinaryToASCIIConverter getBinaryToASCIIConverter(float f) {
         int fBits = Float.floatToRawIntBits( f );
-        boolean isNegative = (fBits&FloatConsts.SIGN_BIT_MASK) != 0;
-        int fractBits = fBits&FloatConsts.SIGNIF_BIT_MASK;
-        int binExp = (fBits&FloatConsts.EXP_BIT_MASK) >> SINGLE_EXP_SHIFT;
+        boolean isNegative = (fBits&FloatConsts2.SIGN_BIT_MASK) != 0;
+        int fractBits = fBits&FloatConsts2.SIGNIF_BIT_MASK;
+        int binExp = (fBits&FloatConsts2.EXP_BIT_MASK) >> SINGLE_EXP_SHIFT;
         // Discover obvious special cases of NaN and Infinity.
-        if ( binExp == (FloatConsts.EXP_BIT_MASK>>SINGLE_EXP_SHIFT) ) {
+        if ( binExp == (FloatConsts2.EXP_BIT_MASK>>SINGLE_EXP_SHIFT) ) {
             if ( fractBits == 0L ){
                 return isNegative ? B2AC_NEGATIVE_INFINITY : B2AC_POSITIVE_INFINITY;
             } else {
@@ -1817,7 +1817,7 @@ public strictfp class FloatingDecimal2{
             fractBits |= SINGLE_FRACT_HOB;
             nSignificantBits = SINGLE_EXP_SHIFT+1;
         }
-        binExp -= FloatConsts.EXP_BIAS;
+        binExp -= FloatConsts2.EXP_BIAS;
         BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
         buf.setSign(isNegative);
         // call the routine that actually does all the hard work.
@@ -2364,28 +2364,28 @@ public strictfp class FloatingDecimal2{
                 // correct as false.
 
                 // Float calculations
-                int floatBits = isNegative ? FloatConsts.SIGN_BIT_MASK : 0;
-                if (exponent >= FloatConsts.MIN_EXPONENT) {
-                    if (exponent > FloatConsts.MAX_EXPONENT) {
+                int floatBits = isNegative ? FloatConsts2.SIGN_BIT_MASK : 0;
+                if (exponent >= FloatConsts2.MIN_EXPONENT) {
+                    if (exponent > FloatConsts2.MAX_EXPONENT) {
                         // Float.POSITIVE_INFINITY
-                        floatBits |= FloatConsts.EXP_BIT_MASK;
+                        floatBits |= FloatConsts2.EXP_BIT_MASK;
                     } else {
-                        int threshShift = DoubleConsts.SIGNIFICAND_WIDTH - FloatConsts.SIGNIFICAND_WIDTH - 1;
+                        int threshShift = DoubleConsts2.SIGNIFICAND_WIDTH - FloatConsts2.SIGNIFICAND_WIDTH - 1;
                         boolean floatSticky = (significand & ((1L << threshShift) - 1)) != 0 || round || sticky;
                         int iValue = (int) (significand >>> threshShift);
                         if ((iValue & 3) != 1 || floatSticky) {
                             iValue++;
                         }
-                        floatBits |= (((((int) exponent) + (FloatConsts.EXP_BIAS - 1))) << SINGLE_EXP_SHIFT) + (iValue >> 1);
+                        floatBits |= (((((int) exponent) + (FloatConsts2.EXP_BIAS - 1))) << SINGLE_EXP_SHIFT) + (iValue >> 1);
                     }
                 } else {
-                    if (exponent < FloatConsts.MIN_SUB_EXPONENT - 1) {
+                    if (exponent < FloatConsts2.MIN_SUB_EXPONENT - 1) {
                         // 0
                     } else {
                         // exponent == -127 ==> threshShift = 53 - 2 + (-149) - (-127) = 53 - 24
-                        int threshShift = (int) ((DoubleConsts.SIGNIFICAND_WIDTH - 2 + FloatConsts.MIN_SUB_EXPONENT) - exponent);
-                        assert threshShift >= DoubleConsts.SIGNIFICAND_WIDTH - FloatConsts.SIGNIFICAND_WIDTH;
-                        assert threshShift < DoubleConsts.SIGNIFICAND_WIDTH;
+                        int threshShift = (int) ((DoubleConsts2.SIGNIFICAND_WIDTH - 2 + FloatConsts2.MIN_SUB_EXPONENT) - exponent);
+                        assert threshShift >= DoubleConsts2.SIGNIFICAND_WIDTH - FloatConsts2.SIGNIFICAND_WIDTH;
+                        assert threshShift < DoubleConsts2.SIGNIFICAND_WIDTH;
                         boolean floatSticky = (significand & ((1L << threshShift) - 1)) != 0 || round || sticky;
                         int iValue = (int) (significand >>> threshShift);
                         if ((iValue & 3) != 1 || floatSticky) {
@@ -2397,12 +2397,12 @@ public strictfp class FloatingDecimal2{
                 float fValue = Float.intBitsToFloat(floatBits);
 
                 // Check for overflow and update exponent accordingly.
-                if (exponent > DoubleConsts.MAX_EXPONENT) {         // Infinite result
+                if (exponent > DoubleConsts2.MAX_EXPONENT) {         // Infinite result
                     // overflow to properly signed infinity
                     return isNegative ? A2BC_NEGATIVE_INFINITY : A2BC_POSITIVE_INFINITY;
                 } else {  // Finite return value
-                    if (exponent <= DoubleConsts.MAX_EXPONENT && // (Usually) normal result
-                            exponent >= DoubleConsts.MIN_EXPONENT) {
+                    if (exponent <= DoubleConsts2.MAX_EXPONENT && // (Usually) normal result
+                            exponent >= DoubleConsts2.MIN_EXPONENT) {
 
                         // The result returned in this block cannot be a
                         // zero or subnormal; however after the
@@ -2416,15 +2416,15 @@ public strictfp class FloatingDecimal2{
                         // Double.MAX_VALUE overflowing to infinity.
 
                         significand = ((( exponent +
-                                (long) DoubleConsts.EXP_BIAS) <<
-                                (DoubleConsts.SIGNIFICAND_WIDTH - 1))
-                                & DoubleConsts.EXP_BIT_MASK) |
-                                (DoubleConsts.SIGNIF_BIT_MASK & significand);
+                                (long) DoubleConsts2.EXP_BIAS) <<
+                                (DoubleConsts2.SIGNIFICAND_WIDTH - 1))
+                                & DoubleConsts2.EXP_BIT_MASK) |
+                                (DoubleConsts2.SIGNIF_BIT_MASK & significand);
 
                     } else {  // Subnormal or zero
                         // (exponent < DoubleConsts.MIN_EXPONENT)
 
-                        if (exponent < (DoubleConsts.MIN_SUB_EXPONENT - 1)) {
+                        if (exponent < (DoubleConsts2.MIN_SUB_EXPONENT - 1)) {
                             // No way to round back to nonzero value
                             // regardless of significand if the exponent is
                             // less than -1075.
@@ -2446,7 +2446,7 @@ public strictfp class FloatingDecimal2{
                             // -1023 +1074 + 1 = 52
 
                             int bitsDiscarded = 53 -
-                                    ((int) exponent - DoubleConsts.MIN_SUB_EXPONENT + 1);
+                                    ((int) exponent - DoubleConsts2.MIN_SUB_EXPONENT + 1);
                             assert bitsDiscarded >= 1 && bitsDiscarded <= 53;
 
                             // What to do here:
@@ -2462,11 +2462,11 @@ public strictfp class FloatingDecimal2{
                             // Now, discard the bits
                             significand = significand >> bitsDiscarded;
 
-                            significand = ((((long) (DoubleConsts.MIN_EXPONENT - 1) + // subnorm exp.
-                                    (long) DoubleConsts.EXP_BIAS) <<
-                                    (DoubleConsts.SIGNIFICAND_WIDTH - 1))
-                                    & DoubleConsts.EXP_BIT_MASK) |
-                                    (DoubleConsts.SIGNIF_BIT_MASK & significand);
+                            significand = ((((long) (DoubleConsts2.MIN_EXPONENT - 1) + // subnorm exp.
+                                    (long) DoubleConsts2.EXP_BIAS) <<
+                                    (DoubleConsts2.SIGNIFICAND_WIDTH - 1))
+                                    & DoubleConsts2.EXP_BIT_MASK) |
+                                    (DoubleConsts2.SIGNIF_BIT_MASK & significand);
                         }
                     }
 
@@ -2501,7 +2501,7 @@ public strictfp class FloatingDecimal2{
                     }
 
                     double value = isNegative ?
-                            Double.longBitsToDouble(significand | DoubleConsts.SIGN_BIT_MASK) :
+                            Double.longBitsToDouble(significand | DoubleConsts2.SIGN_BIT_MASK) :
                             Double.longBitsToDouble(significand );
 
                     return new PreparedASCIIToBinaryBuffer(value, fValue);
